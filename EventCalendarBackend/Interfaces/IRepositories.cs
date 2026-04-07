@@ -30,8 +30,8 @@ namespace EventCalendarAPI.Interfaces
         Task<Event?> GetByIdWithDetailsAsync(int id);
         Task<IEnumerable<Event>> GetAllWithDetailsAsync();
         Task<IEnumerable<Event>> GetByUserIdAsync(int userId);
-        Task<IEnumerable<Event>> SearchAsync(string? keyword, int? categoryId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice, int page, int pageSize, int? venueId = null);
-        Task<int> GetSearchCountAsync(string? keyword, int? categoryId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice, int? venueId = null);
+        Task<IEnumerable<Event>> SearchAsync(string? keyword, int? categoryId, int? venueId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice, int page, int pageSize);
+        Task<int> GetSearchCountAsync(string? keyword, int? categoryId, int? venueId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice);
         Task<PagedResult<Event>> GetAllPagedAsync(int page, int pageSize);
     }
 
@@ -91,6 +91,15 @@ namespace EventCalendarAPI.Interfaces
     public interface IPaymentFilterRepository
     {
         Task<PagedResult<Payment>> GetPagedFilteredAsync(int page, int pageSize, string? status, string? method);
+    }
+
+    // ─── Notification ────────────────────────────────────────────
+    public interface INotificationRepository
+    {
+        Task AddAsync(Notification notification);
+        Task<IEnumerable<Notification>> GetByUserIdAsync(int userId);
+        Task MarkAllReadAsync(int userId);
+        Task<int> GetUnreadCountAsync(int userId);
     }
 
     // ─── Paged Result ────────────────────────────────────────────

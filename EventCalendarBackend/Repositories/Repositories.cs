@@ -93,13 +93,13 @@ namespace EventCalendarAPI.Repositories
                 .OrderBy(e => e.StartDateTime)
                 .ToListAsync();
 
-        public async Task<IEnumerable<Event>> SearchAsync(string? keyword, int? categoryId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice, int page, int pageSize, int? venueId = null)
+        public async Task<IEnumerable<Event>> SearchAsync(string? keyword, int? categoryId, int? venueId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice, int page, int pageSize)
         {
             var query = BuildSearchQuery(keyword, categoryId, venueId, startDate, endDate, privacy, minPrice, maxPrice);
             return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         }
 
-        public async Task<int> GetSearchCountAsync(string? keyword, int? categoryId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice, int? venueId = null)
+        public async Task<int> GetSearchCountAsync(string? keyword, int? categoryId, int? venueId, DateTime? startDate, DateTime? endDate, EventPrivacy? privacy, decimal? minPrice, decimal? maxPrice)
         {
             var query = BuildSearchQuery(keyword, categoryId, venueId, startDate, endDate, privacy, minPrice, maxPrice);
             return await query.CountAsync();
@@ -320,5 +320,36 @@ namespace EventCalendarAPI.Repositories
             var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
             return new PagedResult<AuditLog> { Items = items, TotalCount = total };
         }
+    }
+
+    // ─── Notification Repository ──────────────────────────────────
+    public class NotificationRepository : INotificationRepository
+    {
+        private readonly ApplicationDbContext _context;
+        public NotificationRepository(ApplicationDbContext context) { _context = context; }
+
+        public async Task AddAsync(Notification notification)
+        {
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<Notification>> GetByUserIdAsync(int userId) =>
+            await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+
+        public async Task MarkAllReadAsync(int userId)
+        {
+            var unread = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync();
+            foreach (var n in unread) n.IsRead = true;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> GetUnreadCountAsync(int userId) =>
+            await _context.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 }

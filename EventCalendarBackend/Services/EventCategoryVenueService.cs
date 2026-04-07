@@ -13,14 +13,16 @@ namespace EventCalendarAPI.Services
         private readonly ICategoryRepository _categoryRepository;
         private readonly IVenueRepository _venueRepository;
         private readonly IAuditLogService _auditLog;
+        private readonly IRefundService _refundService;
 
         public EventService(IEventRepository eventRepository, ICategoryRepository categoryRepository,
-            IVenueRepository venueRepository, IAuditLogService auditLog)
+            IVenueRepository venueRepository, IAuditLogService auditLog, IRefundService refundService)
         {
             _eventRepository = eventRepository;
             _categoryRepository = categoryRepository;
             _venueRepository = venueRepository;
             _auditLog = auditLog;
+            _refundService = refundService;
         }
 
         public async Task<EventResponseDto> GetByIdAsync(int id)
@@ -44,11 +46,11 @@ namespace EventCalendarAPI.Services
 
         public async Task<PagedResponseDto<EventResponseDto>> SearchAsync(EventFilterRequestDto filter)
         {
-            var items = await _eventRepository.SearchAsync(filter.Keyword, filter.CategoryId,
+            var items = await _eventRepository.SearchAsync(filter.Keyword, filter.CategoryId, filter.VenueId,
                 filter.StartDate, filter.EndDate, filter.Privacy, filter.MinPrice, filter.MaxPrice,
-                filter.Page, filter.PageSize, filter.VenueId);
-            var total = await _eventRepository.GetSearchCountAsync(filter.Keyword, filter.CategoryId,
-                filter.StartDate, filter.EndDate, filter.Privacy, filter.MinPrice, filter.MaxPrice, filter.VenueId);
+                filter.Page, filter.PageSize);
+            var total = await _eventRepository.GetSearchCountAsync(filter.Keyword, filter.CategoryId, filter.VenueId,
+                filter.StartDate, filter.EndDate, filter.Privacy, filter.MinPrice, filter.MaxPrice);
 
             return new PagedResponseDto<EventResponseDto>
             {
@@ -155,6 +157,9 @@ namespace EventCalendarAPI.Services
             await _eventRepository.UpdateAsync(ev);
             await _auditLog.LogAsync("Delete", "Event", id.ToString(), userId, null,
                 oldValues: $"{{\"title\":\"{ev.Title}\"}}");
+
+            // Issue refunds for all users with completed payments (100% if >2 days before start, 50% if ≤2 days)
+            await _refundService.ProcessRefundsForEventAsync(ev.Id, ev.Title, ev.StartDateTime);
         }
 
         public static EventResponseDto MapToResponse(Event e) => new()
