@@ -25,12 +25,6 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
       </div>
       <div class="top-row">
         <div class="filter-bar">
-          @if (selectedVenueName) {
-            <div class="venue-chip">
-              🏛️ {{ selectedVenueName }}
-              <button class="venue-chip__clear" (click)="selectedVenueId = ''; selectedVenueName = ''; page.set(1); loadEvents()">✕</button>
-            </div>
-          }
           <div class="search-wrap">
             <span class="search-icon">🔍</span>
             <input class="search-input" [(ngModel)]="keyword" placeholder="Search events…" (input)="onSearch()">
@@ -77,13 +71,6 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
         </div>
       </div>
       <div class="events-wrap" [class.events-wrap--loading]="loading()">
-        @if (!auth.isLoggedIn()) {
-          <div class="guest-banner">
-            <span class="guest-banner__icon">🎟️</span>
-            <span class="guest-banner__text">Want to book tickets? Sign in to get started.</span>
-            <a routerLink="/auth/login" class="btn btn--sm">Sign in to Book Tickets</a>
-          </div>
-        }
         <div class="events-grid">
           @for (ev of events(); track ev.id) {
             <a [routerLink]="['/events', ev.id]" class="event-card">
@@ -216,13 +203,6 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     .eg-shadow { width: 52px; height: 8px; background: rgba(0,113,227,.15); border-radius: 50%; margin: 3px auto 0; animation: ghostShadow 3s ease-in-out infinite; }
     @keyframes ghostShadow { 0%,100% { transform: scaleX(1); opacity:.4; } 50% { transform: scaleX(.7); opacity:.2; } }
     @media(max-width: 700px) { .top-row { flex-direction: column; } .cal-panel { width: 100%; } }
-    .venue-chip { display: flex; align-items: center; gap: .375rem; background: rgba(0,113,227,.1); color: var(--accent); font-size: .8125rem; font-weight: 600; padding: .375rem .75rem; border-radius: 20px; white-space: nowrap; }
-    .venue-chip__clear { background: none; border: none; cursor: pointer; color: var(--accent); font-size: .75rem; padding: 0 .125rem; line-height: 1; }
-    .venue-chip__clear:hover { color: var(--danger); }
-    .guest-banner { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: rgba(0,113,227,.06); border: 1px solid rgba(0,113,227,.15); border-radius: 14px; padding: .875rem 1.25rem; margin-bottom: 1rem; }
-    .guest-banner__icon { font-size: 1.5rem; flex-shrink: 0; }
-    .guest-banner__text { flex: 1; font-size: .9375rem; color: var(--text); font-weight: 500; }
-    .guest-banner .btn { flex-shrink: 0; }
   `]
 })
 export class EventListComponent implements OnInit {
@@ -241,8 +221,7 @@ export class EventListComponent implements OnInit {
 
   keyword          = '';
   selectedCategory: any = '';
-  selectedVenueId: any = '';
-  selectedVenueName = '';
+  selectedVenueId: number | null = null;
   minPrice: number | '' = '';
   maxPrice: number | '' = '';
   private searchTimer: any;
@@ -333,11 +312,10 @@ export class EventListComponent implements OnInit {
   ngOnInit() {
     this.categoryApi.getAll(1, 100).subscribe({ next: r => this.categories.set(r.items) });
     this.eventApi.getAll(1, 1000).subscribe({ next: r => this.allEvents.set(r.items) });
-
-    // Pre-select filters from query params (category or venue navigation)
-    const qp = this.route.snapshot.queryParams;
-    if (qp['categoryId'])  this.selectedCategory = qp['categoryId'];
-    if (qp['venueId'])     { this.selectedVenueId = qp['venueId']; this.selectedVenueName = qp['venueName'] || ''; }
+    const catId   = this.route.snapshot.queryParamMap.get('categoryId');
+    const venueId = this.route.snapshot.queryParamMap.get('venueId');
+    if (catId)   this.selectedCategory = catId;
+    if (venueId) this.selectedVenueId  = +venueId;
     this.loadEvents();
   }
 
@@ -348,12 +326,13 @@ export class EventListComponent implements OnInit {
     if (this.keyword)          filter.keyword    = this.keyword;
     if (this.selectedCategory) filter.categoryId = this.selectedCategory;
     if (this.selectedVenueId)  filter.venueId    = this.selectedVenueId;
-    if (this.minPrice !== '')  filter.minPrice   = this.minPrice;
-    if (this.maxPrice !== '')  filter.maxPrice   = this.maxPrice;
+    if (this.minPrice !== '')   filter.minPrice   = this.minPrice;
+    if (this.maxPrice !== '')   filter.maxPrice   = this.maxPrice;
     if (day !== null) {
       const pad = (n: number) => String(n).padStart(2, '0');
       const y = this.calYear(), m = this.calMonth() + 1;
       const dateStr     = `${y}-${pad(m)}-${pad(day)}`;
+      // endDate = next day so the backend range [startDate, endDate) captures the full day
       const nextDay     = new Date(this.calYear(), this.calMonth(), day + 1);
       const nextDateStr = `${nextDay.getFullYear()}-${pad(nextDay.getMonth() + 1)}-${pad(nextDay.getDate())}`;
       filter.startDate = dateStr;
@@ -374,8 +353,7 @@ export class EventListComponent implements OnInit {
   }
 
   clearFilters() {
-    this.keyword = ''; this.selectedCategory = ''; this.selectedVenueId = ''; this.selectedVenueName = '';
-    this.minPrice = ''; this.maxPrice = '';
+    this.keyword = ''; this.selectedCategory = ''; this.selectedVenueId = null; this.minPrice = ''; this.maxPrice = '';
     this.selectedCalDay.set(null); this.page.set(1); this.loadEvents();
   }
 

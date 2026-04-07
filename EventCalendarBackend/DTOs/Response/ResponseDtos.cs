@@ -43,11 +43,11 @@ namespace EventCalendarAPI.DTOs.Response
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string FullName => $"{FirstName} {LastName}";
-        //public string? PhoneNumber { get; set; }
-        //public string? ProfilePicture { get; set; }
-        //public string Role { get; set; } = string.Empty;
-        //public bool EmailNotifications { get; set; }
-        //public bool PushNotifications { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? ProfilePicture { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public bool EmailNotifications { get; set; }
+        public bool PushNotifications { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
@@ -182,5 +182,15 @@ namespace EventCalendarAPI.DTOs.Response
         public int EventId { get; set; }
         public string EventTitle { get; set; } = string.Empty;
         public int UserId { get; set; }
+    }
+
+    // ─── Notification ─────────────────────────────────────────────
+    public class NotificationResponseDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public bool IsRead { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }
