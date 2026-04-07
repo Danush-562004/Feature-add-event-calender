@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EventCalendarAPI</RootNamespace>
+    <!-- Prevents the apphost.exe lock issue on Windows during rebuild -->
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <!-- Kill any running instance before build to release file locks -->
+  <Target Name="KillBeforeBuild" BeforeTargets="Build">
+    <Exec Command="taskkill /IM EventCalendarAPI.exe /F 2&gt;nul || exit 0"
+          ContinueOnError="true"
+          IgnoreExitCode="true" />
+  </Target>
+
+  <ItemGroup>
+    <Compile Remove="EventCalendarAPI.Tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <PackageReference Include="MailKit" Version="4.3.0" />  
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="https://www.schemastore.org/azure-devops-extension-manifest-1.0.json" /></VisualStudio></ProjectExtensions>
+
+</Project>
